@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ITask } from './task.interface';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { FindTasksDto } from './dtos/find-tasks.dto';
+import { UpdateTaskDto } from './dtos/update-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -80,6 +81,24 @@ export class TasksService {
     return updatedTask;
   }
 
+  updateMany(tasks: UpdateTaskDto[]) {
+    const updatedTasks: ITask[] = [];
+
+    tasks.forEach((updateDto) => {
+      const index = this.taskList.findIndex((task) => task.id === updateDto.id);
+      if (index !== -1) {
+        this.taskList[index] = {
+          ...this.taskList[index],
+          ...updateDto,
+          updatedAt: new Date(),
+        };
+        updatedTasks.push(this.taskList[index]);
+      }
+    });
+
+    return updatedTasks;
+  }
+
   remove(id: number) {
     const foundTask = this.taskList.find((t) => t.id === id);
     if (!foundTask) {
@@ -88,5 +107,19 @@ export class TasksService {
 
     this.taskList = this.taskList.filter((t) => t.id !== id);
     return foundTask;
+  }
+
+  removeMany(ids: number[]) {
+    const removedTasks: ITask[] = [];
+    this.taskList = this.taskList.filter((task, index) => {
+      if (ids.includes(task.id)) {
+        removedTasks.push(task);
+        return false;
+      } else {
+        return true;
+      }
+    });
+
+    return removedTasks;
   }
 }

@@ -1,6 +1,9 @@
 import { IsIn, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
-export class CreateTaskDto {
+export class UpdateTaskDto {
+  @IsInt()
+  id: number;
+
   @IsString()
   @IsNotEmpty()
   description: string;

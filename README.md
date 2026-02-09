@@ -12,9 +12,9 @@ Although the API is minimal (focused on task management), it serves as a foundat
 - [x] createTask - POST
 - [x] createTasks - POST
 - [x] updateTask - PUT
-- [ ] updateTasks - PUT
+- [x] updateTasks - PUT
 - [x] removeTask - DELETE
-- [ ] removeTasks - DELETE
+- [x] removeTasks - DELETE
 
 ## RoadMap
 

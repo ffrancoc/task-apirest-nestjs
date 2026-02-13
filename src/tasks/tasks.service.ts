@@ -3,123 +3,125 @@ import { ITask } from './task.interface';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { FindTasksDto } from './dtos/find-tasks.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Task } from './entities/task.entity';
 
 @Injectable()
 export class TasksService {
-  private taskList: ITask[] = [];
+  constructor(
+    @InjectRepository(Task)
+    private taskRepository: Repository<Task>,
+  ) {}
 
-  findAll() {
-    return this.taskList;
+  async findAll() {
+    const tasks = await this.taskRepository.find();
+    return tasks;
   }
 
-  findOne(id: number) {
-    const foundTask = this.taskList.find((t) => t.id === id);
+  async findOne(id: number) {
+    const foundTask = await this.taskRepository.findOneBy({ id: id });
     if (!foundTask) {
-      return new NotFoundException('Task not found');
+      throw new NotFoundException('Task not found');
     }
 
     return foundTask;
   }
 
-  findByFilters(filters: FindTasksDto) {
-    return this.taskList.filter((task, index) => {
-      let matches = true;
+  async findByFilters(filters: FindTasksDto) {
+    const where: any = {};
 
-      if (filters.id) {
-        matches = matches && task.id === filters.id;
-      }
+    if (filters.id) {
+      where.id = filters.id;
+    }
 
-      if (filters.description) {
-        matches = matches && task.description === filters.description;
-      }
+    if (filters.description) {
+      where.description = filters.description;
+    }
 
-      if (filters.status) {
-        matches = matches && task.status === filters.status;
-      }
+    if (filters.status) {
+      where.status = filters.status;
+    }
 
-      return matches;
-    });
+    const tasks = await this.taskRepository.find({ where });
+    return tasks;
   }
 
-  create(dto: CreateTaskDto) {
-    const task: ITask = {
+  async create(dto: CreateTaskDto) {
+    const taskObj = this.taskRepository.create({
       ...dto,
-      id: this.taskList.length + 1,
-      createdAt: new Date(),
-    };
+    });
 
-    this.taskList.push(task);
+    const task = this.taskRepository.save(taskObj);
     return task;
   }
 
-  createMany(dtos: CreateTaskDto[]) {
-    const newTasks = dtos.map((dto, index) => ({
-      id: this.taskList.length + index + 1,
-      ...dto,
-      createdAt: new Date(),
-    }));
-
-    this.taskList.push(...newTasks);
-    return newTasks;
+  async createMany(dtos: CreateTaskDto[]) {
+    const taskObjs = this.taskRepository.create(dtos);
+    const tasks = await this.taskRepository.save(taskObjs);
+    return tasks;
   }
 
-  update(dto: CreateTaskDto, id: number) {
-    const foundIndex = this.taskList.findIndex((t) => t.id === id);
+  async update(dto: CreateTaskDto, id: number) {
+    const foundTask = await this.taskRepository.findOneBy({ id: id });
 
-    if (foundIndex === -1) {
-      return new NotFoundException('Task not Found');
+    if (!foundTask) {
+      throw new NotFoundException('Task not found');
     }
 
-    const updatedTask: ITask = {
-      ...this.taskList[foundIndex],
+    const updateTask = await this.taskRepository.update(id, {
       ...dto,
-      id,
       updatedAt: new Date(),
-    };
+    });
 
-    this.taskList[foundIndex] = updatedTask;
+    const updatedTask = await this.taskRepository.findOneBy({ id });
+
     return updatedTask;
   }
 
-  updateMany(tasks: UpdateTaskDto[]) {
-    const updatedTasks: ITask[] = [];
+  async updateMany(tasks: UpdateTaskDto[]) {
+    const updatedTasks: Task[] = [];
 
-    tasks.forEach((updateDto) => {
-      const index = this.taskList.findIndex((task) => task.id === updateDto.id);
-      if (index !== -1) {
-        this.taskList[index] = {
-          ...this.taskList[index],
+    for (const updateDto of tasks) {
+      const foundTask = await this.taskRepository.findOneBy({
+        id: updateDto.id,
+      });
+
+      if (foundTask) {
+        const mergedTask = this.taskRepository.merge(foundTask, {
           ...updateDto,
           updatedAt: new Date(),
-        };
-        updatedTasks.push(this.taskList[index]);
+        });
+
+        const savedTask = await this.taskRepository.save(mergedTask);
+        updatedTasks.push(savedTask);
       }
-    });
+    }
 
     return updatedTasks;
   }
 
-  remove(id: number) {
-    const foundTask = this.taskList.find((t) => t.id === id);
+  async remove(id: number) {
+    const foundTask = await this.taskRepository.findOneBy({ id });
+
     if (!foundTask) {
-      return new NotFoundException('Task not found');
+      throw new NotFoundException('Task not found');
     }
 
-    this.taskList = this.taskList.filter((t) => t.id !== id);
+    await this.taskRepository.delete({ id });
+
     return foundTask;
   }
 
-  removeMany(ids: number[]) {
-    const removedTasks: ITask[] = [];
-    this.taskList = this.taskList.filter((task, index) => {
-      if (ids.includes(task.id)) {
-        removedTasks.push(task);
-        return false;
-      } else {
-        return true;
-      }
-    });
+  async removeMany(ids: number[]) {
+    const tasks = await this.taskRepository.findBy({ id: In(ids) });
 
-    return removedTasks;
+    if (!tasks.length) {
+      throw new NotFoundException('No tasks found');
+    }
+
+    await this.taskRepository.delete(ids);
+
+    return tasks;
   }
 }

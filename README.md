@@ -18,17 +18,43 @@ Although the API is minimal (focused on task management), it serves as a foundat
 
 ## RoadMap
 
-- [ ] Database integration (PostgreSQL/MongoDB)
+- [x] Database integration (PostgreSQL)
 - [ ] Authentication and authorization (JWT, roles)
 - [ ] User and session management
 - [ ] Pagination and sorting for endpoints
 - [ ] API documentation with Swagger/OpenAPI
 - [ ] Unit and integration testing
 
+## Branchs Projects
+
+This repository has two main branches:
+
+- **main**  
+  Implements task management using in-memory arrays.  
+  Useful for quick testing, prototyping, and understanding basic CRUD logic without a database.
+
+- **feature/database**  
+  Implements persistence with **TypeORM** and **PostgreSQL (pg)**.  
+  Provides full CRUD operations with migrations, validations, and a production-ready setup.
+
+## Database Configuration
+
+.env file configuration
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASS=password
+DB_NAME=tasks
+```
+
 ## Project setup
 
 ```bash
 $ npm install
+$ npm install class-transformer class-validator
+$ npm install @nestjs/typeorm typeorm pg
 ```
 
 ## Compile and run the project
